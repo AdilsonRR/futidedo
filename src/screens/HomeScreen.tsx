@@ -12,7 +12,6 @@ export default function HomeScreen({ navigation }: Props) {
   const { resetarPartida } = useGameStore();
 
   const iniciarJogo = () => {
-    resetarPartida();
     navigation.navigate('SelecaoTime');
   };
 

@@ -1,66 +1,89 @@
 import { create } from 'zustand';
-import { Partida, EstadoPartida, TurnoJogador } from '../game/entities/types';
-import { CAMPO, BOTAO, CORES, PARTIDA } from '../game/constants';
+import { Partida, EstadoPartida, TurnoJogador, Botao, Falta } from '../game/entities/types';
+import { CAMPO, BOTAO, CORES, PARTIDA, posicoes11Jogador } from '../game/constants';
 
-const criarPartidaInicial = (): Partida => ({
-  jogador1: { id: 1, nome: 'Jogador 1', cor: CORES.JOGADOR_1, gols: 0, botaoSelecionado: null },
-  jogador2: { id: 2, nome: 'Jogador 2', cor: CORES.JOGADOR_2, gols: 0, botaoSelecionado: null },
+function criar11Botoes(jogadorId: 1 | 2): Botao[] {
+  const cor = jogadorId === 1 ? CORES.JOGADOR_1 : CORES.JOGADOR_2;
+  const corGk = jogadorId === 1 ? CORES.GOLEIRO_1 : CORES.GOLEIRO_2;
+  const posicoes = posicoes11Jogador(jogadorId, CAMPO.LARGURA, CAMPO.ALTURA);
+  return posicoes.map((p, i) => ({
+    id: `j${jogadorId}-b${i}`,
+    jogadorId,
+    tipo: i === 0 ? 'goleiro' : 'campo',
+    posicao: { x: p.x, y: p.y },
+    velocidade: { x: 0, y: 0 },
+    raio: i === 0 ? BOTAO.RAIO_GOLEIRO_W : BOTAO.RAIO,
+    ativo: true,
+    cor: i === 0 ? corGk : cor,
+  }));
+}
+
+const criarPartidaInicial = (nomes?: { j1: string; j2: string }): Partida => ({
+  jogador1: { id: 1, nome: nomes?.j1 ?? 'Jogador 1', cor: CORES.JOGADOR_1, gols: 0 },
+  jogador2: { id: 2, nome: nomes?.j2 ?? 'Jogador 2', cor: CORES.JOGADOR_2, gols: 0 },
   bola: {
     posicao: { x: CAMPO.LARGURA / 2, y: CAMPO.ALTURA / 2 },
     velocidade: { x: 0, y: 0 },
     raio: BOTAO.RAIO_BOLA,
   },
-  botoes: [
-    { id: 'j1-b1', jogadorId: 1, posicao: { x: 80, y: 300 }, velocidade: { x: 0, y: 0 }, raio: BOTAO.RAIO, ativo: true, cor: CORES.JOGADOR_1 },
-    { id: 'j1-b2', jogadorId: 1, posicao: { x: 80, y: 380 }, velocidade: { x: 0, y: 0 }, raio: BOTAO.RAIO, ativo: true, cor: CORES.JOGADOR_1 },
-    { id: 'j1-b3', jogadorId: 1, posicao: { x: 80, y: 460 }, velocidade: { x: 0, y: 0 }, raio: BOTAO.RAIO, ativo: true, cor: CORES.JOGADOR_1 },
-    { id: 'j2-b1', jogadorId: 2, posicao: { x: 280, y: 300 }, velocidade: { x: 0, y: 0 }, raio: BOTAO.RAIO, ativo: true, cor: CORES.JOGADOR_2 },
-    { id: 'j2-b2', jogadorId: 2, posicao: { x: 280, y: 380 }, velocidade: { x: 0, y: 0 }, raio: BOTAO.RAIO, ativo: true, cor: CORES.JOGADOR_2 },
-    { id: 'j2-b3', jogadorId: 2, posicao: { x: 280, y: 460 }, velocidade: { x: 0, y: 0 }, raio: BOTAO.RAIO, ativo: true, cor: CORES.JOGADOR_2 },
-  ],
-  campo: {
-    largura: CAMPO.LARGURA,
-    altura: CAMPO.ALTURA,
-    gol1: { x: 0, y: CAMPO.ALTURA / 2 - CAMPO.GOL_LARGURA / 2, largura: CAMPO.GOL_ALTURA, altura: CAMPO.GOL_LARGURA, jogadorId: 1 },
-    gol2: { x: CAMPO.LARGURA - CAMPO.GOL_ALTURA, y: CAMPO.ALTURA / 2 - CAMPO.GOL_LARGURA / 2, largura: CAMPO.GOL_ALTURA, altura: CAMPO.GOL_LARGURA, jogadorId: 2 },
-  },
+  botoes: [...criar11Botoes(1), ...criar11Botoes(2)],
   turnoAtual: 1,
-  estado: 'menu',
-  rodada: 1,
+  estado: 'jogando',
   golsParaVencer: PARTIDA.GOLS_PARA_VENCER,
+  faltaAtual: null,
+  tocouBola: false,
 });
 
 interface GameStore {
   partida: Partida;
+  nomes: { j1: string; j2: string };
+  setNomes: (j1: string, j2: string) => void;
   setEstado: (estado: EstadoPartida) => void;
   setTurno: (turno: TurnoJogador) => void;
-  marcarGol: (jogadorId: 1 | 2) => void;
+  marcarGol: (quemMarcou: 1 | 2) => void;
+  registrarFalta: (falta: Falta) => void;
   resetarPartida: () => void;
-  setNomeJogador: (jogadorId: 1 | 2, nome: string) => void;
+  atualizarFisica: (botoes: Botao[], bola: Partida['bola'], tocouBola: boolean) => void;
 }
 
-export const useGameStore = create<GameStore>((set) => ({
+export const useGameStore = create<GameStore>((set, get) => ({
   partida: criarPartidaInicial(),
+  nomes: { j1: 'Jogador 1', j2: 'Jogador 2' },
+
+  setNomes: (j1, j2) => {
+    set({ nomes: { j1, j2 } });
+    set((s) => ({
+      partida: {
+        ...s.partida,
+        jogador1: { ...s.partida.jogador1, nome: j1 },
+        jogador2: { ...s.partida.jogador2, nome: j2 },
+      },
+    }));
+  },
+
   setEstado: (estado) =>
     set((s) => ({ partida: { ...s.partida, estado } })),
+
   setTurno: (turnoAtual) =>
-    set((s) => ({ partida: { ...s.partida, turnoAtual } })),
-  marcarGol: (jogadorId) =>
+    set((s) => ({ partida: { ...s.partida, turnoAtual, tocouBola: false } })),
+
+  marcarGol: (quemMarcou) =>
     set((s) => {
-      const partida = { ...s.partida };
-      if (jogadorId === 1) partida.jogador1 = { ...partida.jogador1, gols: partida.jogador1.gols + 1 };
-      else partida.jogador2 = { ...partida.jogador2, gols: partida.jogador2.gols + 1 };
-      const venceu = jogadorId === 1
-        ? partida.jogador1.gols >= partida.golsParaVencer
-        : partida.jogador2.gols >= partida.golsParaVencer;
-      return { partida: { ...partida, estado: venceu ? 'fim' : 'gol' } };
+      const p = { ...s.partida };
+      if (quemMarcou === 1) p.jogador1 = { ...p.jogador1, gols: p.jogador1.gols + 1 };
+      else p.jogador2 = { ...p.jogador2, gols: p.jogador2.gols + 1 };
+      const fim = p.jogador1.gols >= p.golsParaVencer || p.jogador2.gols >= p.golsParaVencer;
+      return { partida: { ...p, estado: fim ? 'fim' : 'gol', faltaAtual: null } };
     }),
-  resetarPartida: () => set({ partida: criarPartidaInicial() }),
-  setNomeJogador: (jogadorId, nome) =>
-    set((s) => {
-      const partida = { ...s.partida };
-      if (jogadorId === 1) partida.jogador1 = { ...partida.jogador1, nome };
-      else partida.jogador2 = { ...partida.jogador2, nome };
-      return { partida };
-    }),
+
+  registrarFalta: (faltaAtual) =>
+    set((s) => ({ partida: { ...s.partida, estado: 'falta', faltaAtual } })),
+
+  atualizarFisica: (botoes, bola, tocouBola) =>
+    set((s) => ({ partida: { ...s.partida, botoes, bola, tocouBola } })),
+
+  resetarPartida: () => {
+    const { nomes } = get();
+    set({ partida: criarPartidaInicial(nomes) });
+  },
 }));

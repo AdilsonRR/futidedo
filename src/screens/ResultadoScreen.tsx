@@ -12,7 +12,7 @@ type Props = {
 
 export default function ResultadoScreen({ navigation, route }: Props) {
   const { vencedorId, nomeVencedor } = route.params;
-  const { partida, resetarPartida } = useGameStore();
+  const { resetarPartida } = useGameStore();
   const corVencedor = vencedorId === 1 ? '#E63946' : '#2196F3';
 
   const revanche = () => {
@@ -27,12 +27,7 @@ export default function ResultadoScreen({ navigation, route }: Props) {
       <Text style={styles.titulo}>VENCEU!</Text>
 
       <View style={styles.placarFinal}>
-        <Text style={styles.placarTexto}>
-          {partida.jogador1.gols} x {partida.jogador2.gols}
-        </Text>
-        <Text style={styles.placarNomes}>
-          {partida.jogador1.nome}  vs  {partida.jogador2.nome}
-        </Text>
+        <Text style={styles.placarTexto}>{nomeVencedor} venceu!</Text>
       </View>
 
       <TouchableOpacity style={[styles.botao, { backgroundColor: corVencedor }]} onPress={revanche}>

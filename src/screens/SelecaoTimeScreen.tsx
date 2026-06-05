@@ -10,13 +10,13 @@ type Props = {
 };
 
 export default function SelecaoTimeScreen({ navigation }: Props) {
-  const { setNomeJogador } = useGameStore();
+  const { setNomes, resetarPartida } = useGameStore();
   const [nomeJ1, setNomeJ1] = useState('Jogador 1');
   const [nomeJ2, setNomeJ2] = useState('Jogador 2');
 
   const iniciarPartida = () => {
-    setNomeJogador(1, nomeJ1 || 'Jogador 1');
-    setNomeJogador(2, nomeJ2 || 'Jogador 2');
+    setNomes(nomeJ1 || 'Jogador 1', nomeJ2 || 'Jogador 2');
+    resetarPartida();
     navigation.navigate('Partida');
   };
 
