@@ -1,0 +1,30 @@
+export const CAMPO = {
+  LARGURA: 360,
+  ALTURA: 640,
+  GOL_LARGURA: 80,
+  GOL_ALTURA: 20,
+  MARGEM: 20,
+};
+
+export const BOTAO = {
+  RAIO: 22,
+  RAIO_BOLA: 12,
+  FORCA_MINIMA: 2,
+  FORCA_MAXIMA: 20,
+  FRICCAO: 0.05,
+  RESTITUICAO: 0.6,
+};
+
+export const PARTIDA = {
+  GOLS_PARA_VENCER: 3,
+  TEMPO_TURNO_MS: 30000,
+  MAX_ROUNDS: 10,
+};
+
+export const CORES = {
+  JOGADOR_1: '#E63946',
+  JOGADOR_2: '#2196F3',
+  BOLA: '#FFC107',
+  CAMPO: '#2D6A4F',
+  LINHA: 'rgba(255,255,255,0.4)',
+};
